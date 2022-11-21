@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { searchPictures } from 'services/api';
 import { Box } from './Box';
 import { Button } from './Button/Button';
@@ -9,101 +9,84 @@ import { Searchbar } from './Searchbar/Searchbar';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-export class App extends Component {
-  state = {
-    pictures: [],
-    searchQ: '',
-    page: 1,
-    modalImg: '',
-    loader: false,
-    hideBtn: true,
-    total: null,
-  };
+export const App = () => {
+  const [pictures, setPictures] = useState([]);
+  const [searchQ, setSearchQ] = useState('');
+  const [page, setPage] = useState(1);
+  const [modalImg, setModalImg] = useState('');
+  const [loader, setLoader] = useState(false);
+  const [hideBtn, setHideBtn] = useState(true);
 
-  componentDidUpdate(_, prevState) {
-    const { searchQ, page } = this.state;
-
-    if (prevState.page !== page || prevState.searchQ !== searchQ) {
-      return this.loadSearchingImg();
+  useEffect(() => {
+    if (searchQ) {
+      loadSearchingImg();
     }
-  }
 
-  searchImg = searchQuerry => {
-    if (!searchQuerry || searchQuerry === this.state.searchQ) return;
-    this.setState({ searchQ: searchQuerry, page: 1, pictures: [] });
-  };
+    async function loadSearchingImg() {
+      try {
+        setLoader(true);
+        setHideBtn(true);
+        const data = await searchPictures(searchQ, page);
 
-  loadSearchingImg = async () => {
-    try {
-      this.setState({ loader: true, hideBtn: true });
-      const { searchQ, page } = this.state;
-      const data = await searchPictures(searchQ, page);
+        if (!data.hits.length) {
+          setLoader(false);
+          return toast('Sorry, we not found images...');
+        }
 
-      if (!data.hits.length) {
-        this.setState({ loader: false });
-        return toast('Sorry, we not found images...');
+        setPictures(prevState => [...prevState, ...data.hits]);
+        setLoader(false);
+
+        if (page === Math.ceil(data.totalHits / 12)) {
+          toast('Sorry, this is the end of list...');
+          setHideBtn(false);
+        }
+        return;
+      } catch (error) {
+        console.log(error);
       }
-
-      this.setState(prevState => ({
-        pictures: [...prevState.pictures, ...data.hits],
-        loader: false,
-        total: data.totalHits,
-      }));
-
-      if (this.state.page === Math.ceil(this.state.total / 12)) {
-        toast('Sorry, this is the end of list...');
-        this.setState({ hideBtn: false });
-      }
-      return;
-    } catch (error) {
-      console.log(error);
     }
+  }, [page, searchQ]);
+
+  const searchImg = searchQuerry => {
+    if (!searchQuerry || searchQuerry === searchQ) return;
+    setSearchQ(searchQuerry);
+    setPage(1);
+    setPictures([]);
   };
 
-  onClickLoadMore = () => {
-    this.setState({ page: this.state.page + 1 });
+  const onClickLoadMore = () => {
+    setPage(page + 1);
   };
 
-  onModalOpen = url => {
-    this.setState({ modalImg: url });
+  const onModalOpen = url => {
+    setModalImg(url);
   };
 
-  onModalClose = () => {
-    this.setState({
-      modalImg: '',
-    });
+  const onModalClose = () => {
+    setModalImg('');
   };
 
-  render() {
-    return (
-      <>
-        <Searchbar onSubmit={this.searchImg} />
-        <Box as="main" marginTop="30px">
-          <ImageGallery
-            pictures={this.state.pictures}
-            onClick={this.onModalOpen}
-          />
-          {this.state.pictures.length > 0 && this.state.hideBtn && (
-            <Button onClick={this.onClickLoadMore} />
-          )}
-        </Box>
-        {this.state.modalImg && (
-          <Modal closeModal={this.onModalClose} url={this.state.modalImg} />
-        )}
-        {this.state.loader && <Loader />}
-        <ToastContainer
-          position="top-right"
-          autoClose={3000}
-          hideProgressBar={false}
-          newestOnTop={false}
-          closeOnClick
-          rtl={false}
-          pauseOnFocusLoss
-          draggable
-          pauseOnHover
-          theme="dark"
-        />
-      </>
-    );
-  }
-}
+  return (
+    <>
+      <Searchbar onSubmit={searchImg} />
+      <Box as="main" marginTop="30px">
+        <ImageGallery pictures={pictures} onClick={onModalOpen} />
+        {pictures.length > 0 && hideBtn && <Button onClick={onClickLoadMore} />}
+      </Box>
+      {modalImg && <Modal closeModal={onModalClose} url={modalImg} />}
+      {loader && <Loader />}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
+    </>
+  );
+};

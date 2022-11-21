@@ -1,4 +1,5 @@
-import { Component } from 'react';
+import PropTypes from 'prop-types';
+import { useState } from 'react';
 import {
   SearchbarWrapper,
   SearchbarBtn,
@@ -6,46 +7,38 @@ import {
   SearchbarInput,
 } from './Searchbar.styled';
 
-export class Searchbar extends Component {
-  state = {
-    search: '',
-  };
+export const Searchbar = ({ onSubmit = () => {} }) => {
+  const [search, setSearch] = useState('');
 
-  onChange = e => {
-    const { name, value } = e.currentTarget;
-    this.setState({ [name]: value.trim() });
-  };
+  const onChange = e => setSearch(e.currentTarget.value.trim());
 
-  reset = () => {
-    this.setState({ search: '' });
-  };
-
-  onSubmit = e => {
+  const handlerSubmit = e => {
     e.preventDefault();
-    const searchQuerry = this.state.search;
-    this.props.onSubmit(searchQuerry);
-    this.reset();
+    onSubmit(search);
+    setSearch('');
   };
 
-  render() {
-    return (
-      <SearchbarWrapper>
-        <SearchbarForm onSubmit={this.onSubmit}>
-          <SearchbarBtn type="submit">
-            <span className="button-label">Search</span>
-          </SearchbarBtn>
+  return (
+    <SearchbarWrapper>
+      <SearchbarForm onSubmit={handlerSubmit}>
+        <SearchbarBtn type="submit">
+          <span className="button-label">Search</span>
+        </SearchbarBtn>
 
-          <SearchbarInput
-            value={this.state.search}
-            name="search"
-            onChange={this.onChange}
-            type="text"
-            autocomplete="off"
-            autoFocus
-            placeholder="Search images and photos"
-          />
-        </SearchbarForm>
-      </SearchbarWrapper>
-    );
-  }
-}
+        <SearchbarInput
+          value={search}
+          name="search"
+          onChange={onChange}
+          type="text"
+          autocomplete="off"
+          autoFocus
+          placeholder="Search images and photos"
+        />
+      </SearchbarForm>
+    </SearchbarWrapper>
+  );
+};
+
+Searchbar.propTypes = {
+  onSubmit: PropTypes.func.isRequired,
+};

@@ -22,7 +22,7 @@ export const ImageGallery = ({ pictures = [], onClick = () => {} }) => {
 
 ImageGallery.propTypes = {
   onClick: PropTypes.func.isRequired,
-  pictures: PropTypes.arrayof(
+  pictures: PropTypes.arrayOf(
     PropTypes.shape({
       id: PropTypes.number.isRequired,
       webformatURL: PropTypes.string.isRequired,
